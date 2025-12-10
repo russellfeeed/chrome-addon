@@ -1,6 +1,6 @@
-# Simple Chrome Extension
+# Simple Chrome/Edge Extension
 
-A minimal Chrome extension for testing private deployment.
+A minimal Chrome/Edge extension for testing private deployment. This extension works on both Chrome and Microsoft Edge (Chromium-based).
 
 ## Features
 
@@ -10,10 +10,18 @@ A minimal Chrome extension for testing private deployment.
 
 ## Local Testing
 
-### Load Unpacked Extension (Development)
+### Chrome - Load Unpacked Extension (Development)
 
 1. Open Chrome and navigate to `chrome://extensions/`
 2. Enable "Developer mode" (toggle in top-right corner)
+3. Click "Load unpacked"
+4. Select this extension's folder
+5. The extension icon should appear in your toolbar
+
+### Edge - Load Unpacked Extension (Development)
+
+1. Open Microsoft Edge and navigate to `edge://extensions/`
+2. Enable "Developer mode" (toggle in left sidebar)
 3. Click "Load unpacked"
 4. Select this extension's folder
 5. The extension icon should appear in your toolbar
@@ -56,9 +64,9 @@ A minimal Chrome extension for testing private deployment.
 "update_url": "https://yourserver.com/updates.xml"
 ```
 
-### Option 3: Chrome Web Store (Private/Unlisted)
+### Option 3A: Chrome Web Store (Private/Unlisted)
 
-**Best for organizations:**
+**Best for Chrome deployments:**
 1. Create a Chrome Web Store developer account ($5 one-time fee)
 2. Go to [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole)
 3. Click "New Item" and upload your extension as a ZIP file
@@ -67,6 +75,20 @@ A minimal Chrome extension for testing private deployment.
    - **Unlisted**: Anyone with the link can install
 5. Submit for review
 6. Share the private link with your users
+
+### Option 3B: Microsoft Edge Add-ons Store (Private/Hidden)
+
+**Best for Edge deployments:**
+1. Create a Microsoft Partner Center account (free)
+2. Go to [Microsoft Partner Center](https://partner.microsoft.com/dashboard/microsoftedge)
+3. Click "New extension" and upload your extension as a ZIP file
+4. Set visibility to "Private" or "Hidden":
+   - **Private**: Only specific Microsoft accounts/groups can access
+   - **Hidden**: Not searchable but accessible via direct link
+5. Submit for review (usually faster than Chrome Web Store)
+6. Share the private link with your users
+
+**Note:** Extensions published to either store work on both browsers - Chrome can install from Edge Add-ons store and vice versa.
 
 ### Option 4: Enterprise Policy Deployment (Managed Chrome)
 
@@ -109,7 +131,7 @@ Give your IT team:
 
 #### Step 4: IT Deploys via Group Policy or Google Admin Console
 
-**Method A: Google Admin Console (if using Google Workspace)**
+**Method A: Google Admin Console (Chrome - if using Google Workspace)**
 
 Your IT admin will:
 1. Log into [admin.google.com](https://admin.google.com)
@@ -123,7 +145,24 @@ Your IT admin will:
 
 Extensions will auto-install on user devices within minutes.
 
+**Method A2: Microsoft 365 Admin Center (Edge - if using Microsoft 365)**
+
+Your IT admin will:
+1. Log into [admin.microsoft.com](https://admin.microsoft.com)
+2. Go to: Settings → Microsoft Edge
+3. Navigate to Extensions
+4. Add extension by:
+   - Edge Add-ons store URL, OR
+   - Upload the extension package
+5. Set installation policy to "Force install"
+6. Assign to users/groups
+7. Save changes
+
+Extensions will auto-install on managed Edge browsers.
+
 **Method B: Windows Group Policy (if using Active Directory)**
+
+**For Chrome:**
 
 Your IT admin will:
 
@@ -158,10 +197,45 @@ Your IT admin will:
    - Look for "ExtensionInstallForcelist"
    - Extension should appear in `chrome://extensions/` automatically
 
+**For Microsoft Edge:**
+
+Your IT admin will:
+
+1. **Download Edge ADMX templates** (if not already installed):
+   - Download from: https://www.microsoft.com/en-us/edge/business/download
+   - Extract the policy templates
+   - Copy `windows/admx/msedge.admx` to `C:\Windows\PolicyDefinitions\`
+   - Copy `windows/admx/en-US/msedge.adml` to `C:\Windows\PolicyDefinitions\en-US\`
+
+2. **Configure Group Policy**:
+   - Open Group Policy Management Console (gpmc.msc)
+   - Edit the appropriate GPO for your users
+   - Navigate to: Computer Configuration → Policies → Administrative Templates → Microsoft Edge → Extensions
+   - Configure "Control which extensions are installed silently"
+   - Click "Enabled"
+   - Click "Show" next to the list
+   - Add entry in format:
+     ```
+     extension_id;update_url
+     ```
+   
+   **Examples:**
+   - Edge Add-ons store: `abcdefghijklmnopqrstuvwxyzabcdef;https://edge.microsoft.com/extensionwebstorebase/v1/crx`
+   - Chrome Web Store: `abcdefghijklmnopqrstuvwxyzabcdef;https://clients2.google.com/service/update2/crx`
+   - Self-hosted: `abcdefghijklmnopqrstuvwxyzabcdef;https://yourserver.com/updates.xml`
+
+3. **Apply the policy**:
+   - Run `gpupdate /force` on domain computers, OR
+   - Wait for automatic Group Policy refresh (90 minutes default)
+
+4. **Verify deployment**:
+   - On a user's computer, go to `edge://policy/`
+   - Look for "ExtensionInstallForcelist"
+   - Extension should appear in `edge://extensions/` automatically
+
 **Method C: Windows Registry (Single Computer Testing)**
 
-For testing on a single Windows machine without full Group Policy:
-
+**For Chrome:**
 1. Open Registry Editor (regedit.exe) as Administrator
 2. Navigate to: `HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist`
 3. If the key doesn't exist, create it
@@ -175,6 +249,22 @@ For testing on a single Windows machine without full Group Policy:
 ```
 [HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist]
 "1"="abcdefghijklmnopqrstuvwxyzabcdef;https://clients2.google.com/service/update2/crx"
+```
+
+**For Microsoft Edge:**
+1. Open Registry Editor (regedit.exe) as Administrator
+2. Navigate to: `HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist`
+3. If the key doesn't exist, create it
+4. Create a new String Value:
+   - Name: `1` (increment for each extension: 1, 2, 3, etc.)
+   - Value: `extension_id;update_url`
+5. Restart Edge
+6. Extension should auto-install
+
+**Registry example:**
+```
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist]
+"1"="abcdefghijklmnopqrstuvwxyzabcdef;https://edge.microsoft.com/extensionwebstorebase/v1/crx"
 ```
 
 ### Option 5: Developer Mode (Testing Only)
